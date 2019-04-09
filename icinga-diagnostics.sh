@@ -462,8 +462,8 @@ create_tarball() {
   # create tarball of all collected data
   TARBALL="/tmp/icinga-diagnostics_$(hostname)_${TIMESTAMP}.tar.bz2"
   TAR_C_OPTIONS="-C ${OUTPUTDIR} ."
-  [ -d "/etc/icinga2" ] && TAR_C_OPTIONS="${TAR_C_OPTIONS} -C /etc/icinga2 ."
-  [ -d "/etc/icingaweb2" ] && TAR_C_OPTIONS="${TAR_C_OPTIONS} -C /etc/icingaweb2 ."
+  [ -d "/etc/icinga2" ] && TAR_C_OPTIONS="${TAR_C_OPTIONS} -C /etc/ icinga2/"
+  [ -d "/etc/icingaweb2" ] && TAR_C_OPTIONS="${TAR_C_OPTIONS} -C /etc/ icingaweb2/"
   if [ -d "/var/log/icinga2" ]
   then
     LOG_FILES=""
