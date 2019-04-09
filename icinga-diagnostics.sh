@@ -456,25 +456,45 @@ create_tarball() {
   else
     $0 > ${OUTPUTDIR}/icinga_diagnostics
   fi
-  # copy Icinga 2 configuration into tarball
-  cp -a /etc/icinga2 ${OUTPUTDIR}/
-  # copy Icinga Web 2 configuration into tarball
-  cp -a /etc/icingaweb2 ${OUTPUTDIR}/
-  # copy most recent logs
-  cp /var/log/icinga2/icinga2.log ${OUTPUTDIR}/
-  cp /var/log/icinga2/error.log ${OUTPUTDIR}/
-  cp -r /var/log/icinga2/crash ${OUTPUTDIR}/
   top -b -n1 > ${OUTPUTDIR}/top
-  if [ -f /var/log/icinga2/debug.log ]
-  then
-    cp /var/log/icinga2/debug.log ${OUTPUTDIR}/
-  fi
   icinga2 --version > ${OUTPUTDIR}/icinga2_version
+
   # create tarball of all collected data
-  cd ${OUTPUTDIR} && tar -cjf /tmp/icinga-diagnostics_$(hostname)_${TIMESTAMP}.tar.bz2 * 2>/dev/null
-  chmod 0600 /tmp/icinga-diagnostics_$(hostname)_${TIMESTAMP}.tar.bz2
-  echo "Your tarball is ready at: /tmp/icinga-diagnostics_$(hostname)_${TIMESTAMP}.tar.bz2"
-  exit 0
+  TARBALL="/tmp/icinga-diagnostics_$(hostname)_${TIMESTAMP}.tar.bz2"
+  TAR_C_OPTIONS="-C ${OUTPUTDIR} ."
+  [ -d "/etc/icinga2" ] && TAR_C_OPTIONS="${TAR_C_OPTIONS} -C /etc/icinga2 ."
+  [ -d "/etc/icingaweb2" ] && TAR_C_OPTIONS="${TAR_C_OPTIONS} -C /etc/icingaweb2 ."
+  if [ -d "/var/log/icinga2" ]
+  then
+    LOG_FILES=""
+    [ -f "/var/log/icinga2/icinga2.log" ] && LOG_FILES="${LOG_FILES} icinga2.log"
+    [ -f "/var/log/icinga2/error.log" ] && LOG_FILES="${LOG_FILES} error.log"
+    [ -f "/var/log/icinga2/debug.log" ] && LOG_FILES="${LOG_FILES} debug.log"
+    [ -d "/var/log/icinga2/crash" ] && LOG_FILES="${LOG_FILES} crash/"
+    TAR_C_OPTIONS="${TAR_C_OPTIONS} -C /var/log/icinga2 ${LOG_FILES}"
+  fi
+
+  tar -cjf "${TARBALL}" ${TAR_C_OPTIONS} 2> /dev/null
+  if [ $? -ne 0 ]
+  then
+    rm "${TARBALL}"
+    TARBALL="/tmp/icinga-diagnostics_$(hostname)_${TIMESTAMP}.tar.gz"
+    tar -czf "${TARBALL}" ${TAR_C_OPTIONS}
+    if [ $? -ne 0 ]
+    then
+      echo "ERROR: Unable to create tarball"
+      rm "${TARBALL}"
+      exit 1
+    fi
+  fi
+
+  if [ -f "${TARBALL}" ]
+  then
+    chmod 0600 "${TARBALL}"
+    echo "Your tarball is ready at: ${TARBALL}"
+    exit 0
+  fi
+  exit 1
 }
 
 ### Main ###
